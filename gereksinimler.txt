@@ -1,0 +1,35 @@
+# Araç Tanımlama ve Analiz Sistemi Gereksinimleri
+# Not: Bu sistem Nomeroff-Net (Plaka Okuma 2) için Python 3.11 gerektirir.
+
+# Temel Web ve Arayüz Bağımlılıkları
+flask
+flask-cors
+ultralytics
+opencv-python
+numpy
+pillow
+requests
+PyQt5
+pyqt5-tools
+
+# Nomeroff-Net (Plaka Okuma 2) Bağımlılıkları
+pytorch-lightning
+torch>=2.0
+torchvision
+scikit-image
+albumentations
+scikit-learn
+termcolor
+ujson
+tqdm
+gitpython
+PyYAML
+seaborn
+matplotlib
+scipy
+gevent
+
+# Git üzerinden kurulan özel modüller (Kurulum.bat tarafından halledilir)
+# craft-text-detector
+# modelhub-client
+# PyTurboJPEG

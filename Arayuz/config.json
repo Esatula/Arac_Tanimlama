@@ -1,0 +1,26 @@
+{
+    "modules": [
+        {
+            "id": "plate_recognition",
+            "name": "Hibrit Plaka Tan\u0131ma",
+            "description": "Nomeroff-Net + YOLO ile ara\u00e7 sayma ve plaka tan\u0131ma.",
+            "icon": "\ud83d\udd22",
+            "type": "image",
+            "script": "Mod\u00fcller/Plaka Okuma 2/plaka_okuma_nomeroff.py"
+        },
+        {
+            "id": "vehicle_tracking",
+            "name": "Ara\u00e7 Takibi (Eski)",
+            "description": "DeepSORT ve YOLO ile video tabanl\u0131 ara\u00e7 takibi.",
+            "icon": "\ud83d\ude97",
+            "type": "video",
+            "script": "Mod\u00fcller/Arac Tanima/main.py"
+        }
+    ],
+    "settings": {
+        "theme": "dark",
+        "tr_format": true,
+        "auto_save": false,
+        "use_gpu": true
+    }
+}

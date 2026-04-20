@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Araç Tanımlama ve Analiz Sistemi</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <i class="fa-solid fa-car-burst logo-icon"></i>
+                <h2>OtoAnaliz</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active"><i class="fa-solid fa-chart-pie"></i> Ana Panel</a>
+                
+                <h3 class="nav-category">AKTİF MODÜLLER</h3>
+                <a href="#" class="nav-item"><i class="fa-solid fa-car"></i> Araç Sayısı</a>
+                <a href="#" class="nav-item"><i class="fa-solid fa-id-card"></i> Plaka Okuma</a>
+                
+                <h3 class="nav-category">YAKINDA</h3>
+                <a href="#" class="nav-item disabled"><i class="fa-solid fa-palette"></i> Araç Rengi</a>
+
+            </nav>
+            <div class="sidebar-footer">
+                <p>OtoAnaliz v1.0</p>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="top-header">
+                <div class="header-search">
+                    <i class="fa-solid fa-search"></i>
+                    <input type="text" placeholder="Modül veya analiz ara...">
+                </div>
+                <div class="header-actions">
+                    <button class="action-btn"><i class="fa-solid fa-bell"></i></button>
+                    <div class="user-profile">
+                        <img src="https://ui-avatars.com/api/?name=Admin&background=1e1e2d&color=00d2ff" alt="User">
+                        <span>Yönetici</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Content -->
+            <div class="dashboard-body">
+                <h1 class="page-title">Sistem Özeti</h1>
+                
+                <!-- Settings Panel -->
+                <div class="settings-panel">
+                    <div class="settings-panel-header" id="settingsToggleHeader">
+                        <i class="fa-solid fa-gear"></i>
+                        <h3>Analiz Ayarları</h3>
+                        <i class="fa-solid fa-chevron-down toggle-arrow open" id="settingsArrow"></i>
+                    </div>
+                    <div class="settings-body" id="settingsBody">
+                        <div class="setting-row">
+                            <div class="setting-info">
+                                <span class="setting-label"><i class="fa-solid fa-flag" style="margin-right:6px; color:#00d2ff;"></i>Türkçe Plaka Formatında Oku</span>
+                                <span class="setting-desc">Sonucu Türk plakası formatına göre düzeltir ve filtreler.</span>
+                                <span class="format-badge">11 AAA 1111</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="trFormatToggle">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upload Section -->
+                <div class="upload-section">
+                    <div class="upload-box" id="uploadBox">
+                        <input type="file" id="fileInput" accept="image/*" hidden>
+                        <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                        <h3>Analiz İçin Görüntü Yükle</h3>
+                        <p>Sürükle bırak veya bilgisayarından seç</p>
+                        <button class="btn-primary" onclick="document.getElementById('fileInput').click()">Dosya Seç</button>
+                    </div>
+                </div>
+
+                <!-- Analysis Results (Hidden by default) -->
+                <div class="results-container" id="resultsContainer" style="display: none;">
+                    <div class="results-header">
+                        <h2>Analiz Sonuçları</h2>
+                        <span class="status-badge success"><i class="fa-solid fa-check"></i> Analiz Tamamlandı</span>
+                    </div>
+                    
+                    <div class="results-grid">
+                        <!-- Image Preview -->
+                        <div class="result-card image-preview-card">
+                            <h3 class="card-title">İşlenen Görüntü</h3>
+                            <div class="image-wrapper">
+                                <img id="previewImage" src="" alt="Yüklenen Görsel">
+                                <!-- Simulated bounding boxes overlay -->
+                                <div class="bounding-box b-box-1">
+                                    <span class="box-label">Araç 95%</span>
+                                </div>
+                                <div class="bounding-box b-box-2">
+                                    <span class="box-label">Araç 89%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Metrics / Active Modules -->
+                        <div class="metrics-column">
+                            <!-- Vehicle Count Card -->
+                            <div class="metric-card gradient-1">
+                                <div class="metric-icon">
+                                    <i class="fa-solid fa-car-side"></i>
+                                </div>
+                                <div class="metric-info">
+                                    <h4>Tespit Edilen Araç</h4>
+                                    <h2 id="vehicleCount">2</h2>
+                                </div>
+                            </div>
+
+                            <!-- License Plates Card -->
+                            <div class="metric-card">
+                                <h3 class="card-title">Okunan Plakalar</h3>
+                                <ul class="plate-list" id="plateList">
+                                    <li class="plate-item">
+                                        <div class="plate-text">34 ABC 123</div>
+                                        <div class="plate-conf">Güven Puanı: %98</div>
+                                    </li>
+                                    <li class="plate-item">
+                                        <div class="plate-text">06 GUV 456</div>
+                                        <div class="plate-conf">Güven Puanı: %92</div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

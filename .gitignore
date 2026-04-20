@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environments
+venv/
+venv_plaka2/
+.venv/
+
+# Models and Data (Large Files) - Bunlar kurulum.bat ile otomatik iner
+*.pt
+*.ckpt
+*.weights
+Modüller/Plaka Okuma 2/data/
+
+# Eski Plaka Okuma modülü (Pasif)
+Modüller/Plaka Okuma/
+!Modüller/Plaka Okuma/.gitignore
+
+# OS and IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Application Temp Files
+Arayuz/temp_upload.jpg
+Kayitlar/
+*.log
+
+# Redundant Nomeroff-Net files
+Modüller/Plaka Okuma 2/*.zip
+Modüller/Plaka Okuma 2/docs/
+Modüller/Plaka Okuma 2/tutorials/
+Modüller/Plaka Okuma 2/benchmark/
+Modüller/Plaka Okuma 2/examples/
+Modüller/Plaka Okuma 2/docker/
+Modüller/Plaka Okuma 2/public/
+Modüller/Plaka Okuma 2/blog/
+
+# Otopark Modülü (Gelecek planlar için yerel tutulacak)
+Modüller/Otopark Takip/
