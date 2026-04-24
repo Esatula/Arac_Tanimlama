@@ -3,10 +3,10 @@
         {
             "id": "plate_recognition",
             "name": "Hibrit Plaka Tan\u0131ma",
-            "description": "Nomeroff-Net + YOLO ile ara\u00e7 sayma ve plaka tan\u0131ma.",
+            "description": "Geli\u015fmi\u015f Plaka Motoru + YOLO ile ara\u00e7 sayma ve plaka tan\u0131ma.",
             "icon": "\ud83d\udd22",
             "type": "image",
-            "script": "Mod\u00fcller/Plaka Okuma 2/plaka_okuma_nomeroff.py"
+            "script": "Mod\u00fcller/Plaka Okuma 2/plaka_tanima_motoru.py"
         },
         {
             "id": "vehicle_tracking",

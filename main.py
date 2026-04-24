@@ -6,8 +6,8 @@ def run_app():
     # Mevcut dizin
     base_dir = os.path.dirname(os.path.abspath(__file__))
     
-    # Python 3.11 Sanal Ortam Yolu (Venv) - Klasör ismindeki Türkçeye takılmamak için dinamik bulma
-    venv_base = os.path.join(base_dir, "Modüller", "Plaka Okuma 2", "venv_plaka2")
+    # Python 3.11 Sanal Ortam Yolu (Venv)
+    venv_base = os.path.join(base_dir, ".venv")
     python_exe = os.path.join(venv_base, "Scripts", "python.exe")
     
     # Eğer sanal ortam bulunamazsa (ilk kurulum yapılmadıysa)
@@ -23,8 +23,8 @@ def run_app():
 
     # Eğer şu anki çalışan python zaten venv içindeki python ise direkt çalıştır
     if sys.executable.lower() == python_exe.lower():
-        import OtoAnaliz_Pro
-        # Mainloop zaten orada olduğu için burası çalışacaktır
+        import runpy
+        runpy.run_path(app_script, run_name="__main__")
     else:
         # Değilse, venv'deki python ile kendini/uygulamayı yeniden başlat
         print("Doğru ortam (Python 3.11) başlatılıyor...")

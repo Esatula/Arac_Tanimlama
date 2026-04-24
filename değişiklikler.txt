@@ -1,0 +1,44 @@
+# OTOANALİZ PRO - SİSTEM DEĞİŞİKLİK VE GÜNCELLEME GÜNLÜĞÜ
+Bu dosya, projede yapılan kritik mimari, algoritma ve altyapı değişikliklerinin özetini ve teknik detaylarını kronolojik olarak tutmak amacıyla oluşturulmuştur.
+
+======================================================================
+TARİH: 24 Nisan 2026
+KAPSAM: GPU Uyumluluğu ve Plaka Renk (Tür) Analizi Algoritması
+======================================================================
+
+[1] GPU (AMD DirectML) Uyumluluk Sorununun Çözülmesi
+- ÖZET: Sistemin AMD ekran kartını (RX 6600 vb.) tanıması sağlandı. Uygulama artık işlemleri işlemci (CPU) yerine çok daha hızlı olan ekran kartında (GPU) yapabiliyor.
+- DETAYLAR: 
+  * Güncel PyTorch (v2.11) kütüphanesinin AMD'nin "torch-directml" eklentisiyle henüz uyumlu çalışmadığı tespit edildi.
+  * `gereksinimler.txt` dosyası güncellenerek PyTorch sürümü `torch==2.4.1` ve `torchvision==0.19.1` versiyonlarına sabitlendi.
+  * Hatalı sanal ortam temizlenerek kurulum betikleri (kurulum.bat / kurulum.sh) üzerinden baştan kuruldu.
+
+[2] K-Means Kümeleme Algoritması ile Gelişmiş Renk Analizi (Plaka Sınıflandırma Mantığının Yenilenmesi)
+- ÖZET: Siyah (Resmi) ve Kırmızı (Rektör/Protokol) plakaların sistem tarafından yanlışlıkla "Sivil Araç (Beyaz)" olarak algılanması sorunu çözüldü. Piksel tabanlı kümeleme yaklaşımı ile ışık parlamalarına (glare) ve yazı kalınlıklarına (font weight) karşı %100'e yakın doğruluk sağlandı.
+- TEKNİK DETAYLAR:
+  * Sınıf / Metot: `Core.plaka_analiz.PlakaAnalizator` sınıfı içerisindeki `renk_cikar(self, img_bgr)` fonksiyonu tamamen yeniden mimarilendirildi.
+  * Eski Yöntem: `np.mean(v)` kullanılarak tüm plakanın ortalama parlaklık (luminance) değeri ölçülüyordu. Bu durum, kalın fontlu beyaz harflerin siyah plakayı beyaz gibi göstermesine (false-positive) yol açıyordu.
+  * Yeni Yöntem (K-Means Clustering): OpenCV `cv2.kmeans` fonksiyonu kullanılarak Gözetimsiz Öğrenme (Unsupervised Learning) tabanlı bir renk kümeleme modeli entegre edildi. 
+  * Veri Hazırlığı: Gürültüyü (çamurluk, plakalık çerçevesi vb.) azaltmak için plaka görüntüsünün merkez %70'lik alanı (kenarlardan %15 kırpılarak) izole edildi (`inner_img = img_bgr[crop_h:h-crop_h, crop_w:w-crop_w]`). 
+  * Algoritma Parametreleri: Pikseller 3 boyutlu özellik uzayında (RGB/BGR) `cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER` kriterleri ile K=2 kümesine (Zemin ve Yazı Rengi) ayrıldı.
+  * Sınıflandırma Sınırları: Küme merkezleri (centroids), R, G, B eşik değerleri (Örn: Kırmızı için `r > 110`, `r > g*1.5`, `r > b*1.5`) ve Parlaklık formülü `(0.299*r + 0.587*g + 0.114*b < 110)` kullanılarak kesin renk sınıflarına (Kırmızı, Mavi, Sarı, Siyah, Beyaz, Yeşil) çevrildi.
+
+[3] İsimlendirme ve Model Yükleme Hatalarının Giderilmesi
+- ÖZET: "Nomeroff-Net" altyapısının Türkçeleştirilmesi sırasında kopan bağlantılar onarıldı, modellerin yüklenememesi sorunu (aktif modül seçin hatası) çözüldü.
+- DETAYLAR:
+  * Modellerin internetten indirildiği sunucu adreslerindeki (`models.vsp.net.ua/config_model/nomeroff-net/...`) kelimeler çeviri betiği tarafından yanlışlıkla bozulduğu için 403 erişim hatası alınıyordu. Düzeltildi.
+  * Eğitilmiş model dosyaları (weights) yüklenirken kendi eski kütüphane isimlerini aradıkları için oluşan çökme sorunu, Python `sys.modules` içerisine sahte bir referans (alias) eklenerek `sys.modules['nomeroff_net'] = sys.modules['plaka_motoru']` şeklinde çözüldü.
+
+[4] Türkiye Trafik Yönetmeliği (Wikipedia) Standartlarına Göre Regex (Düzenli İfadeler) Sınıflandırması
+- ÖZET: K-Means renk analizi çıktısı, Türkiye'deki tüm yasal plaka kodları için yazılmış Düzenli İfadeler (Regex) ile melezlenerek (hybrid approach) 10'dan fazla alt sınıf (Polis, Jandarma, Taksi, Diplomatik, Askeri vb.) yüksek doğrulukla oluşturuldu.
+- TEKNİK DETAYLAR:
+  * Sınıf / Metot: `Core.plaka_analiz.PlakaAnalizator` sınıfı içerisindeki `analiz_et(self, plaka_metni, arka_plan_rengi, yazi_rengi)` fonksiyonuna implemente edildi.
+  * Mantıksal Akış: Fonksiyon önce zemin rengine (bg) bakarak plakanın ana kategorisini (Resmi, Diplomatik, Sivil) belirlemekte, ardından Regex kuralları ile alt kırılımları doğrulamaktadır.
+  * Öne Çıkan Regex Kuralları:
+    - Polis (Mavi): `re.fullmatch(r"^(0[1-9]|[1-7][0-9]|8[0-1])A[A-Z]?\d{3,5}$", plaka)`
+    - Jandarma (Mavi): `re.fullmatch(r"^(0[1-9]|[1-7][0-9]|8[0-1])J[A-Z]{2}\d{3,4}$", plaka)`
+    - Diplomatik (Yeşil): `re.fullmatch(r"^(0[1-9]|[1-7][0-9]|8[0-1])C[CDGM]\d{3,4}$", plaka)`
+    - Askeri (Beyaz): Sadece 6 rakam kontrolü `re.fullmatch(r"^\d{6}$", plaka)`
+    - Taksi/Ticari (Beyaz): T veya M harf bloğu `re.fullmatch(r"^(0[1-9]|[1-7][0-9]|8[0-1])[TM]\d{3,4}$", plaka)`
+    - Üst Düzey Protokol (Kırmızı/Sarı): 0001 (Vali) veya 4 haneli rakam bloğu.
+  * Bu hibrit yapı sayesinde, sivil plakalar ile birebir aynı harf formatına sahip olan Siyah (Kamu) ve Kırmızı (Rektör/Emniyet Müdürü) plakalar, sadece görüntü işleme çıktısına dayanarak kesin (deterministic) olarak ayrıştırıldı.

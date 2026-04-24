@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 > nul
 echo ============================================================
-echo      OtoAnaliz Hibrit Sistem (Nomeroff-Net) Kurulumu
+echo      OtoAnaliz Gelişmiş Plaka Tanıma Sistemi Kurulumu
 echo ============================================================
 echo.
 echo [1/3] Python 3.11 kontrol ediliyor...
@@ -16,7 +16,7 @@ if %errorlevel% neq 0 (
 
 echo [2/3] Sanal ortam ve ana paketler kuruluyor...
 cd /d "%~dp0"
-set "VENV_PATH=Modüller\Plaka Okuma 2\venv_plaka2"
+set "VENV_PATH=.venv"
 
 if not exist "%VENV_PATH%" (
     py -3.11 -m venv "%VENV_PATH%"

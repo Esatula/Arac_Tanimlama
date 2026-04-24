@@ -244,11 +244,11 @@ class OtoAnalizPro(ctk.CTk):
 
         # Eğer araç veya plaka modülü seçiliyse durumlarını kontrol et
         if run_vehicle or run_plates:
-            nomeroff_status = module_manager.get_status("Nomeroff-Net v4")
-            if nomeroff_status == ModuleStatus.LOADING:
+            plaka_status = module_manager.get_status("Gelişmiş Plaka Tanıma v4")
+            if plaka_status == ModuleStatus.LOADING:
                 messagebox.showinfo("Sabır...", "Yapay zeka modelleri arka planda yükleniyor. Lütfen birkaç saniye sonra tekrar deneyin.")
                 return
-            elif nomeroff_status == ModuleStatus.ERROR:
+            elif plaka_status == ModuleStatus.ERROR:
                 messagebox.showerror("Hata", "Yapay zeka modelleri yüklenemedi. Lütfen kurulumu kontrol edin.")
                 return
 
@@ -287,9 +287,9 @@ class OtoAnalizPro(ctk.CTk):
             plate_list = []
 
             if run_vehicle or run_plates:
-                nomeroff = module_manager.get_module("Nomeroff-Net v4")
-                if nomeroff:
-                    result = nomeroff.process(file_path, run_plates=run_plates)
+                plaka_modul = module_manager.get_module("Gelişmiş Plaka Tanıma v4")
+                if plaka_modul:
+                    result = plaka_modul.process(file_path, run_plates=run_plates)
                     if ann_img is None: 
                         ann_img = result["annotated_image"]
                     

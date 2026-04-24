@@ -6,17 +6,17 @@ import base64
 import sys
 from pathlib import Path
 
-# Modüller/Plaka Okuma 2 (Nomeroff-Net) dizinini ekle
+# Modüller/Plaka Okuma 2 dizinini ekle
 plaka2_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'Modüller', 'Plaka Okuma 2')
 sys.path.append(plaka2_dir)
 
 try:
-    from plaka_okuma_nomeroff import detect_and_read_nomeroff
-    NOMEROFF_AVAILABLE = True
+    from plaka_tanima_motoru import detect_and_read_plaka
+    PLAKA_AVAILABLE = True
 except ImportError as e:
-    print(f"Uyarı: Nomeroff-Net yüklenemedi: {e}")
-    detect_and_read_nomeroff = None
-    NOMEROFF_AVAILABLE = False
+    print(f"Uyarı: Plaka Motoru yüklenemedi: {e}")
+    detect_and_read_plaka = None
+    PLAKA_AVAILABLE = False
 
 from flask_cors import CORS
 
@@ -36,12 +36,12 @@ def analyze():
     temp_path = str(Path(os.path.dirname(__file__)) / "temp_upload.jpg")
     file.save(temp_path)
     
-    if not NOMEROFF_AVAILABLE:
-        return jsonify({"error": "Nomeroff-Net modülü veya bağımlılıkları eksik. Lütfen venv kurulumunu kontrol edin."}), 500
+    if not PLAKA_AVAILABLE:
+        return jsonify({"error": "Gelişmiş Plaka Motoru modülü veya bağımlılıkları eksik. Lütfen venv kurulumunu kontrol edin."}), 500
 
-    # Nomeroff-Net ile analiz yap
+    # Plaka Motoru ile analiz yap
     # Bu işlem ilk seferde modelleri indireceği için uzun sürebilir.
-    ann_img, text, vehicle_count = detect_and_read_nomeroff(temp_path)
+    ann_img, text, vehicle_count = detect_and_read_plaka(temp_path)
     
     if ann_img is None:
         return jsonify({"error": text}), 500
@@ -60,9 +60,9 @@ def analyze():
         "image": f"data:image/jpeg;base64,{img_b64}", 
         "texts": text, 
         "vehicle_count": vehicle_count,
-        "module": "Nomeroff-Net (Offline)"
+        "module": "Gelişmiş Plaka Motoru"
     })
 
 if __name__ == "__main__":
-    # Not: Nomeroff-Net ağır bir kütüphanedir, modellerin yüklenmesi zaman alabilir.
+    # Not: Gelişmiş Plaka Motoru ağır bir kütüphanedir, modellerin yüklenmesi zaman alabilir.
     app.run(port=5000)

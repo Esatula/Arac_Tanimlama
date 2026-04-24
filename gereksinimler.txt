@@ -1,5 +1,5 @@
 # Araç Tanımlama ve Analiz Sistemi Gereksinimleri
-# Not: Bu sistem Nomeroff-Net (Plaka Okuma 2) için Python 3.11 gerektirir.
+# Not: Bu sistem Gelişmiş Plaka Tanıma için Python 3.11 gerektirir.
 
 # Temel Web ve Arayüz Bağımlılıkları
 flask
@@ -11,11 +11,16 @@ pillow
 requests
 PyQt5
 pyqt5-tools
+customtkinter
+pandas
+easyocr
+deep-sort-realtime
+torch-directml
 
-# Nomeroff-Net (Plaka Okuma 2) Bağımlılıkları
+# Gelişmiş Plaka Tanıma Bağımlılıkları
 pytorch-lightning
-torch>=2.0
-torchvision
+torch==2.4.1
+torchvision==0.19.1
 scikit-image
 albumentations
 scikit-learn
