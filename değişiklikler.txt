@@ -42,3 +42,42 @@ KAPSAM: GPU Uyumluluğu ve Plaka Renk (Tür) Analizi Algoritması
     - Taksi/Ticari (Beyaz): T veya M harf bloğu `re.fullmatch(r"^(0[1-9]|[1-7][0-9]|8[0-1])[TM]\d{3,4}$", plaka)`
     - Üst Düzey Protokol (Kırmızı/Sarı): 0001 (Vali) veya 4 haneli rakam bloğu.
   * Bu hibrit yapı sayesinde, sivil plakalar ile birebir aynı harf formatına sahip olan Siyah (Kamu) ve Kırmızı (Rektör/Emniyet Müdürü) plakalar, sadece görüntü işleme çıktısına dayanarak kesin (deterministic) olarak ayrıştırıldı.
+
+[5] Kullanıcı Arayüzü (GUI) Revizyonu ve Dinamik Plaka Rozetleri
+- ÖZET: Arayüzdeki düz metin tabanlı dar sonuç paneli iptal edilerek, analiz ekranının altına kaydırılabilir (scrollable) ve araç plakalarını gerçekçi grafiklerle bir liste düzeninde gösteren "Dinamik Rozet (Badge)" sistemi eklendi.
+- DETAYLAR:
+  * `OtoAnaliz_Pro.py` arayüz yerleşimi dikey (top-bottom) olarak yeniden yapılandırıldı. Görsel gösterim alanı maksimum boyuta çıkarıldı.
+  * Alt panele dikeyde (yukarıdan aşağı) kaydırılabilen `CTkScrollableFrame` eklendi.
+  * Sonuçların salt metin olarak gösterilmesi yerine, K-Means ve Regex çıktısına uygun renklere sahip `PlateBadge` (Plaka Rozeti) bileşeni kodlandı.
+  * Arayüz Listeleme Düzeni: En üstte kırmızı renkte toplam "ARAÇ SAYISI: X" bilgisi konumlandırıldı. Altında ise her tespit edilen araç için sırasıyla `ARAÇ_İD: [Plaka Maketi] + [Plaka Türü]` formatında, akademik listelemeye uygun bir satır yapısı (row frame) oluşturuldu.
+  * Rozet Özellikleri: Her plakanın sol tarafına mavi zeminli beyaz "TR" şeridi eklendi. Sivil, Resmi, Polis, Diplomatik ve Valilik plakaları için ayrı ayrı arkaplan ve yazı rengi eşleştirmeleri yapıldı (Örn: Polis plakası için `#003399` zemin, `white` yazı rengi kullanılarak maket plaka çizilmesi).
+  * Yeni okunan plakalar ekrana eklenirken, eski analiz sonuçları otomatik olarak bellekten (destroy) silinecek şekilde optimize edildi.
+
+[5-1] Kullanıcı Arayüzü: Izgara (Grid) Düzeni Optimizasyonu
+- ÖZET: Görselde çok fazla araç tespit edildiğinde plakaların dikeyde tek sütun halinde alt alta sıralanması ekranı çok uzattığı için liste düzeninden "Yan Yana Izgara (Grid)" düzenine geçildi.
+- DETAYLAR:
+  * `OtoAnaliz_Pro.py` içerisindeki `finish_analysis` metodunda yer alan `.pack(side="top")` listeleme algoritması iptal edildi.
+  * Bunun yerine bir `grid_frame` oluşturularak rozetler `.grid(row, column)` matrisine yerleştirildi.
+  * Rozetler `col_idx` ve `row_idx` mantığıyla hesaplanarak ekranda "Yan Yana 2 Sütun" (Araç 1 ve Araç 2 yanyana, altlarında Araç 3 ve Araç 4) olacak şekilde dizayn edildi. Bu sayede harcanan dikey kaydırma alanı %50 oranında tasarruflu kullanılarak inceleme (UX) çok daha kolaylaştırıldı.
+
+[6] Optimizasyon Hataları ve Mantıksal Çakışmaların (Bug) Giderilmesi
+- ÖZET: Arayüz ve yapay zeka entegrasyonu sırasındaki mantıksal hatalar (Regex-Renk çakışmaları ve UI temizleme sorunları) giderildi.
+- KARŞILAŞILAN HATALAR VE ÇÖZÜMLERİ:
+  * Hata 1 (Yatay/Dikey Kaydırma): `OtoAnaliz_Pro.py` içindeki `CTkScrollableFrame` yanlışlıkla yatay (`horizontal`) olarak tasarlanmıştı ve bu durum plakaların üst üste binmesine sebep oldu. Çözüm olarak oryantasyon `vertical` yapılarak plakaların liste halinde (satır satır) dizilmesi sağlandı.
+  * Hata 2 (Ekran Sıfırlama Unutkanlığı): Arayüz yenilenirken eski metin kutusu silindiği için "Yeni Analiz" (`reset_analysis`) butonunun ekranı temizleme özelliği bozulmuştu (Eski objeyi arayıp bulamadığı için sessizce hata veriyordu). Fonksiyon, yeni `results_panel` içindeki rozetleri (widget) `destroy` edecek şekilde yeniden yazıldı.
+  * Hata 3 (Vali / Rektör Plakası Çakışması ve OCR Gizli Karakter Sorunu): `Core/plaka_analiz.py` algoritmasında öncelik sadece "Renk" verisine verilmişti. Güneş parlaması nedeniyle rengi tam seçilemeyen kırmızı bir Vali plakası (`060001`), salt renk koşulundan dolayı hatalı şekilde Rektör/Protokol aracı olarak sınıflandırılıyordu. Bu sorunu çözmek için `0001` kuralı en başa (Strict Regex) alınmasına rağmen, OCR (NomeroffNet) motorundan dönen metnin sonunda yer alan gözle görünmez gizli karakterler (örneğin satır sonu karakteri `\n`) nedeniyle `re.fullmatch` fonksiyonu bu eşleşmeyi atlıyor ve sistem tekrar renk analizine düşerek hata veriyordu.
+  * Çözüm (Deterministik Yaklaşım ve Agresif Veri Temizliği): Öncelikle OCR'dan gelen ham metin `re.sub(r"[^A-Z0-9]", "", str(plaka_metni).upper())` kuralı ile agresif bir şekilde sterilize edildi (Tüm boşluklar, tireler ve `\n` gibi gizli karakterler silinerek sadece saf harf ve rakamlar bırakıldı). Ardından, formatı gereği kimliği tamamen "kesin" olan Valilik (`060001`), Askeri Araç (`^\d{6}$`) ve TBMM (`^TBMM\d{3}$`) plakaları, görüntü işlemeye (renk verisine) bakılmaksızın doğrudan üst öncelikle tespit edilecek şekilde hiyerarşinin en başına alındı. Böylece hem OCR'ın gizli karakter hatası hem de yapay zekanın olası bir renk yanılgısı, Regex'in %100 kesinliği ile by-pass edildi.
+
+[7] OCR Hata Düzeltme Modülü (Typo Correction ve Post-Processing)
+- ÖZET: NomeroffNet gibi yapay zeka tabanlı OCR (Karakter Tanıma) motorlarının, görsel olarak birbirine benzeyen karakterleri (Örn: 0 ve O) karıştırmasını engellemek amacıyla Türkiye Plaka Formatına (TS 8745) özel bir "Oto-Düzeltme (Typo Correction)" algoritması geliştirildi.
+- TEKNİK DETAYLAR VE ALGORİTMA MİMARİSİ:
+  * Bağımsız Modüler Yapı: Düzeltme işlemleri `Core/ocr_duzeltici.py` adında yepyeni bir sınıfa (`OcrDuzeltici`) taşındı. Bu yapı "Tak-Çalıştır (Plug & Play)" mantığıyla tasarlandığı için istendiği an sistemden izole edilebilir.
+  * Çift Yönlü Karakter Sözlüğü (Mapping Dictionary): Sık karşılaşılan OCR hatalarını gidermek için deterministik bir sözlük oluşturuldu.
+    - Harften Rakama Zorlama (Force to Digit): `{'O': '0', 'Q': '0', 'I': '1', 'L': '1', 'Z': '2', 'S': '5', 'B': '8', 'G': '6'}`
+    - Rakamdan Harfe Zorlama (Force to Letter): `{'0': 'O', '1': 'I', '2': 'Z', '5': 'S', '8': 'B', '6': 'G'}`
+  * Akıllı Konum ve Format Analizi (Heuristic Analysis): Algoritma, plakanın dizilimine bakarak hangi konumda harf veya rakam olması gerektiğini istatistiksel ve kural tabanlı olarak analiz eder:
+    1. Sivil Plaka Başlangıç Kuralı: Türkiye'deki sivil ve ticari plakalar her zaman 2 haneli İl Kodu (01-81) ile başlamak zorundadır. Eğer plaka `O6 AA 123` şeklinde okunmuşsa, algoritma ilk 2 hanedeki 'O' karakterini zorla rakama ('0') çevirerek `06 AA 123` formatına oturtur.
+    2. Vali ve Askeri Plaka Kuralı (Tamamı Rakam): Türkiye'de içerisinde sadece 1 harf bulunan sivil plaka formatı yoktur. Eğer 6 haneli bir plakanın içinde sadece 1 veya 2 harf kalmışsa (Örn: `8O0001` - 5 rakam, 1 harf), sistem bunun yapay zeka tarafından yanlış okunduğunu tespit eder ve içindeki o tek harfi zorla rakama çevirir (`8O0001` -> `800001`).
+    3. TBMM Format Kuralı: Metin `TBM` ile başlıyorsa, algoritma ilk 4 haneyi zorla harfe (`TBMM`), kalan 3 haneyi zorla rakama (Örn: `TBMM0O1` -> `TBMM001`) çevirir.
+    4. Sivil Plaka Bitiş Kuralı: Sivil plakaların sonu her zaman rakam bloğuyla biter. Algoritma sağdan sola doğru okuma yaparak harf görene kadar tüm karakterleri (Örn: `34 A 12B4` -> `34A1284`) zorla rakama çevirir.
+  * Entegrasyon: Bu yapı `Core/plaka_analiz.py` dosyasına dahil edildi ve `analiz_et` metodunda Regex ve Renk analizinden hemen önce (Pre-processing adımı olarak) tetiklenecek şekilde ayarlandı. Böylece analiz motoruna her zaman pürüzsüz ve formatı doğrulanmış bir metin gönderilmesi sağlandı.

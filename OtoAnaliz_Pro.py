@@ -199,33 +199,72 @@ class OtoAnalizPro(ctk.CTk):
                                            command=self.toggle_device_click)
         self.device_badge.pack(side="right", padx=10)
 
-        # İçerik Alanı (Yatay)
+        # İçerik Alanı (Dikey)
         self.content_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
         self.content_frame.pack(fill="both", expand=True, padx=20, pady=10)
         
-        # Sol: Görsel Alanı
+        # Üst: Görsel Alanı
         self.display_frame = ctk.CTkFrame(self.content_frame, fg_color="#121212", corner_radius=10)
-        self.display_frame.pack(side="left", fill="both", expand=True, padx=(0, 10))
+        self.display_frame.pack(side="top", fill="both", expand=True, pady=(0, 10))
         self.img_lbl = ctk.CTkLabel(self.display_frame, text="Görsel seçimi bekliyor...")
         self.img_lbl.pack(expand=True)
         
-        # Sağ: Çıktı Bilgileri Paneli
-        self.results_panel = ctk.CTkFrame(self.content_frame, width=250, fg_color="#1e1e1e", corner_radius=10)
-        self.results_panel.pack(side="right", fill="y")
-        self.results_panel.pack_propagate(False)
+        # Alt: Çıktı Bilgileri Paneli (Scrollable, Dikey)
+        self.results_panel = ctk.CTkScrollableFrame(self.content_frame, height=200, orientation="vertical", fg_color="#1e1e1e", corner_radius=10)
+        self.results_panel.pack(side="bottom", fill="x")
         
-        ctk.CTkLabel(self.results_panel, text="Analiz Sonuçları", font=ctk.CTkFont(size=16, weight="bold")).pack(pady=(20, 10))
+        # Status & Count Frame
+        self.status_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
+        self.status_frame.pack(fill="x", padx=20, pady=(0, 10))
+        self.status_lbl = ctk.CTkLabel(self.status_frame, text="Hazır", font=ctk.CTkFont(slant="italic"))
+        self.status_lbl.pack(side="left")
         
-        self.lbl_count = ctk.CTkLabel(self.results_panel, text="Araç Sayısı: -", font=ctk.CTkFont(size=14))
-        self.lbl_count.pack(pady=5, anchor="w", padx=20)
+    def create_plate_badge(self, parent, index, plaka_metni, tur):
+        bg_color = "#FFFFFF" # Default Beyaz
+        fg_color = "#000000" # Default Siyah
         
-        ctk.CTkLabel(self.results_panel, text="Okunan Plakalar:", font=ctk.CTkFont(size=14, underline=True)).pack(pady=(20, 5), anchor="w", padx=20)
-        self.txt_plates = ctk.CTkTextbox(self.results_panel, fg_color="transparent", width=210, height=300)
-        self.txt_plates.pack(pady=5, padx=20, fill="both", expand=True)
-        self.txt_plates.configure(state="disabled")
-
-        self.status_lbl = ctk.CTkLabel(self.main_frame, text="Hazır", font=ctk.CTkFont(slant="italic"))
-        self.status_lbl.pack(pady=5)
+        tur_lower = tur.lower()
+        if "polis" in tur_lower or "jandarma" in tur_lower or "sahil" in tur_lower:
+            bg_color = "#003399"
+            fg_color = "#FFFFFF"
+        elif "resmi" in tur_lower or "kamu" in tur_lower:
+            bg_color = "#111111"
+            fg_color = "#FFFFFF"
+        elif "diplomatik" in tur_lower:
+            bg_color = "#009933"
+            fg_color = "#FFFFFF"
+        elif "valilik" in tur_lower or "üst düzey" in tur_lower:
+            bg_color = "#CC0000"
+            fg_color = "#FFD700"
+        elif "protokol" in tur_lower or "rektör" in tur_lower:
+            bg_color = "#CC0000"
+            fg_color = "#FFFFFF"
+        elif "geçici" in tur_lower:
+            bg_color = "#FFCC00"
+            fg_color = "#000000"
+        
+        row_frame = ctk.CTkFrame(parent, fg_color="transparent")
+        
+        # ARAÇ İD:
+        id_lbl = ctk.CTkLabel(row_frame, text=f"ARAÇ {index}:", text_color="#e74c3c", font=ctk.CTkFont(size=16, weight="bold"))
+        id_lbl.pack(side="left", padx=(0, 10))
+        
+        # Plaka Çizimi (Gövde)
+        plate_body = ctk.CTkFrame(row_frame, fg_color=bg_color, corner_radius=5, border_width=2, border_color="#555555")
+        plate_body.pack(side="left", padx=(0, 10), pady=5)
+        
+        # TR Şeridi
+        tr_stripe = ctk.CTkFrame(plate_body, fg_color="#0033AA", width=25, corner_radius=0)
+        tr_stripe.pack(side="left", fill="y", padx=(2, 0), pady=2)
+        ctk.CTkLabel(tr_stripe, text="TR", text_color="white", font=ctk.CTkFont(size=10, weight="bold")).pack(side="bottom", pady=2)
+        
+        # Plaka Metni
+        ctk.CTkLabel(plate_body, text=plaka_metni, text_color=fg_color, font=ctk.CTkFont(size=22, weight="bold")).pack(side="left", padx=15, pady=5)
+        
+        # Tür Etiketi
+        ctk.CTkLabel(row_frame, text=f"+ {tur}", text_color="#e74c3c", font=ctk.CTkFont(size=14, weight="bold")).pack(side="left")
+        
+        return row_frame
 
     def select_file(self):
         path = filedialog.askopenfilename(filetypes=[("Görsel", "*.jpg *.jpeg *.png")])
@@ -319,35 +358,48 @@ class OtoAnalizPro(ctk.CTk):
         self.btn_cancel.pack_forget()
         self.btn_reset.pack(side="left", padx=10)
         
-        if hasattr(self, 'lbl_count') and self.last_result:
+        if self.last_result:
             count = self.last_result.get('count', 0)
-            self.lbl_count.configure(text=f"Araç Sayısı: {count}")
             plates = self.last_result.get('plates', [])
             crops = self.last_result.get('crops', [])
             
             plaka_analiz_aktif = self.config.get("settings", {}).get("plaka_analiz_aktif", True)
-            plate_text_lines = []
             
+            # Eski sonuçları temizle
+            for widget in self.results_panel.winfo_children():
+                widget.destroy()
+                
+            # ARAÇ SAYISI 
+            ctk.CTkLabel(self.results_panel, text=f"ARAÇ SAYISI: {count}", text_color="#e74c3c", font=ctk.CTkFont(size=16, weight="bold")).pack(anchor="w", padx=15, pady=(10, 10))
+                
             if plates:
                 analizator = PlakaAnalizator()
                 analizator.durumu_ayarla(plaka_analiz_aktif)
+                
+                grid_frame = ctk.CTkFrame(self.results_panel, fg_color="transparent")
+                grid_frame.pack(fill="x", padx=10)
+                
+                row_idx = 0
+                col_idx = 0
+                
                 for i, p in enumerate(plates):
                     if plaka_analiz_aktif:
                         crop = crops[i] if i < len(crops) else None
                         arka_plan, yazi = analizator.renk_cikar(crop) if crop is not None else (None, None)
                         sonuc = analizator.analiz_et(p, arka_plan, yazi)
                         tur = sonuc.get("tur", "Bilinmeyen") if sonuc else "Bilinmeyen"
-                        plate_text_lines.append(f"• {p} [{tur}]")
+                        badge = self.create_plate_badge(grid_frame, i+1, p, tur)
                     else:
-                        plate_text_lines.append(f"• {p}")
-                plate_text = "\n".join(plate_text_lines)
+                        badge = self.create_plate_badge(grid_frame, i+1, p, "Sınıflandırma Kapalı")
+                        
+                    badge.grid(row=row_idx, column=col_idx, padx=15, pady=5, sticky="w")
+                    
+                    col_idx += 1
+                    if col_idx > 1: # Yan yana 2 sütun (İhtiyaca göre 3'e de çıkarılabilir)
+                        col_idx = 0
+                        row_idx += 1
             else:
-                plate_text = "Bulunamadı"
-                
-            self.txt_plates.configure(state="normal")
-            self.txt_plates.delete("1.0", "end")
-            self.txt_plates.insert("1.0", plate_text)
-            self.txt_plates.configure(state="disabled")
+                ctk.CTkLabel(self.results_panel, text="Plaka Bulunamadı", font=ctk.CTkFont(slant="italic", text_color="gray")).pack(pady=10)
 
         if self.config["settings"]["auto_save"]:
             self.manual_save()
@@ -386,11 +438,11 @@ class OtoAnalizPro(ctk.CTk):
         self.btn_select.configure(state="normal")
         self.btn_run.pack(side="left", padx=10)
         self.img_lbl.configure(image="", text="Görsel seçimi bekliyor...")
-        if hasattr(self, 'lbl_count'):
-            self.lbl_count.configure(text="Araç Sayısı: -")
-            self.txt_plates.configure(state="normal")
-            self.txt_plates.delete("1.0", "end")
-            self.txt_plates.configure(state="disabled")
+        if hasattr(self, 'status_lbl'):
+            self.status_lbl.configure(text="Hazır")
+        if hasattr(self, 'results_panel'):
+            for widget in self.results_panel.winfo_children():
+                widget.destroy()
 
     # --- KAYDEDİLENLER (SİLME MODU GÜNCELLEMESİ) ---
     def show_saved(self):

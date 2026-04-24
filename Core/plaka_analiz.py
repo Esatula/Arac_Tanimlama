@@ -2,6 +2,9 @@ import re
 import cv2
 import numpy as np
 
+# Yeni OCR Düzeltici modülümüzü içe aktarıyoruz
+from Core.ocr_duzeltici import OcrDuzeltici
+
 class PlakaAnalizator:
     def __init__(self):
         # Ayarlardan modülün aktif/pasif durumunu kontrol etmek için bir bayrak
@@ -13,17 +16,20 @@ class PlakaAnalizator:
 
     def analiz_et(self, plaka_metni, arka_plan_rengi=None, yazi_rengi=None):
         """
-        Plaka metnini ve renk bilgilerini alarak Türkiye standartlarına göre plaka tipini döndürür.
+        Regex kuralları ve renk analizini birleştirerek plaka türünü tespit eder.
         """
         if not self.aktif:
             return None
 
-        # Boşlukları temizle ve büyük harfe çevir
-        plaka = plaka_metni.replace(" ", "").upper()
+        # Sadece harf ve rakamları bırak (boşluk, tire, enter(\n) gibi gizli karakterleri sil)
+        temiz_plaka = re.sub(r"[^A-Z0-9]", "", str(plaka_metni).upper())
+        
+        # OCR (Yapay Zeka) Okuma Hatalarını Türkiye Sistemine Göre Düzelt (8O0001 -> 800001)
+        plaka = OcrDuzeltici.duzelt(temiz_plaka)
         
         # Renk bilgileri gelmemişse standart beyaz/siyah kabul et
-        bg = (arka_plan_rengi or "beyaz").lower()
-        fg = (yazi_rengi or "siyah").lower()
+        bg = arka_plan_rengi.lower() if arka_plan_rengi else "beyaz"
+        fg = yazi_rengi.lower() if yazi_rengi else "siyah"
 
         sonuc = {
             "plaka": plaka,
@@ -31,6 +37,19 @@ class PlakaAnalizator:
             "tespit_yontemi": "Renk + Regex",
             "ek_bilgi_gerekiyor": False
         }
+
+        # --- KESİN REGEX KONTROLLERİ (Renge Bakılmaksızın Kesin Olanlar) ---
+        if re.fullmatch(r"^(0[1-9]|[1-7][0-9]|8[0-1])0001$", plaka):
+            sonuc["tur"] = "Valilik Makam Aracı"
+            return sonuc
+            
+        if re.fullmatch(r"^\d{4}$", plaka) or re.fullmatch(r"^TBMM\d{3}$", plaka):
+            sonuc["tur"] = "Üst Düzey Protokol / TBMM"
+            return sonuc
+            
+        if re.fullmatch(r"^\d{6}$", plaka):
+            sonuc["tur"] = "Askeri Araç"
+            return sonuc
 
         # 1. DİPLOMATİK ARAÇLAR (Yeşil zemin, Beyaz yazı)
         if bg == "yesil":
@@ -52,42 +71,28 @@ class PlakaAnalizator:
                 sonuc["tur"] = "Emniyet/Güvenlik Gücü (Özel)"
             return sonuc
 
-        # 3. ÜST DÜZEY PROTOKOL / VALİ (Kırmızı zemin, Sarı yazı)
-        if bg == "kirmizi" and fg == "sari":
-            if re.fullmatch(r"^(0[1-9]|[1-7][0-9]|8[0-1])0001$", plaka):
-                sonuc["tur"] = "Valilik Makam Aracı"
-            elif re.fullmatch(r"^\d{4}$", plaka) or re.fullmatch(r"^TBMM\d{3}$", plaka):
-                sonuc["tur"] = "Üst Düzey Protokol / TBMM"
-            else:
-                sonuc["tur"] = "Üst Düzey Protokol"
-            return sonuc
-
-        # 4. PROTOKOL / REKTÖR / KAYMAKAM / EMNİYET MÜD. (Kırmızı zemin, Beyaz yazı)
-        if bg == "kirmizi" and fg == "beyaz":
+        # 3. PROTOKOL / REKTÖR / KAYMAKAM / EMNİYET MÜD. (Kırmızı zemin)
+        # Sivil plakayla aynı formattadır, ayırmak için renk şarttır.
+        if bg == "kirmizi":
             sonuc["tur"] = "Protokol (Rektör/Emniyet Md./Kaymakam)"
             return sonuc
 
-        # 5. RESMİ ARAÇLAR (Siyah zemin, Beyaz yazı)
-        if bg == "siyah" and fg == "beyaz":
+        # 4. RESMİ ARAÇLAR (Siyah zemin, Beyaz yazı)
+        if bg == "siyah":
             sonuc["tur"] = "Resmi Hizmete Mahsus Araç (Kamu/Belediye/İtfaiye)"
             return sonuc
 
-        # 6. GEÇİCİ / TRANSİT PLAKALAR (Sarı zemin, Siyah yazı)
+        # 5. GEÇİCİ / TRANSİT PLAKALAR (Sarı zemin, Siyah yazı)
         if bg == "sari":
             sonuc["tur"] = "Geçici / Transit Araç"
             return sonuc
 
-        # 7. ASKERİ ARAÇLAR (Beyaz zemin, Siyah yazı, 6 rakam)
-        if re.fullmatch(r"^\d{6}$", plaka):
-            sonuc["tur"] = "Askeri Araç"
-            return sonuc
-
-        # 8. GEÇİCİ KONAKLAMA İZİNLİ YABANCILAR (MA-MZ arası harf grubu)
+        # 6. GEÇİCİ KONAKLAMA İZİNLİ YABANCILAR (MA-MZ arası harf grubu)
         if re.fullmatch(r"^(0[1-9]|[1-7][0-9]|8[0-1])M[A-Z]\d{3,4}$", plaka):
-            sonuc["tur"] = "Geçici Konaklama İzinli Yabancı (Suriyeli vb.)"
+            sonuc["tur"] = "Geçici Konaklama İzinli Yabancı"
             return sonuc
 
-        # 9. TİCARİ ARAÇLAR (Taksi 'T', Minibüs 'M')
+        # 7. TİCARİ ARAÇLAR (Taksi 'T', Minibüs 'M')
         if re.fullmatch(r"^(0[1-9]|[1-7][0-9]|8[0-1])T\d{3,4}$", plaka):
             sonuc["tur"] = "Ticari Taksi"
             return sonuc
@@ -96,12 +101,12 @@ class PlakaAnalizator:
             sonuc["tur"] = "Ticari Minibüs"
             return sonuc
 
-        # 10. ÖZEL (SİVİL) ARAÇLAR (Beyaz zemin, Siyah yazı)
+        # 8. ÖZEL (SİVİL) ARAÇLAR (Beyaz zemin, Siyah yazı)
         if bg == "beyaz":
             if re.fullmatch(r"^(0[1-9]|[1-7][0-9]|8[0-1])[A-Z]{1,3}\d{2,4}$", plaka):
                 sonuc["tur"] = "Özel (Sivil) Araç"
             else:
-                sonuc["tur"] = "Özel (Sivil) Araç (Belirsiz Format)"
+                sonuc["tur"] = "Özel (Sivil) Araç"
             return sonuc
 
         sonuc["tur"] = "Format Dışı / Okunamadı"
