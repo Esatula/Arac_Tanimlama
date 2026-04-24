@@ -13,6 +13,7 @@ from Core.module_manager import ModuleStatus
 # Mimari Importları
 from Core.module_manager import ModuleManager
 from Core.device_manager import DeviceManager
+from Core.plaka_analiz import PlakaAnalizator
 
 # Dizin ayarları
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -126,7 +127,7 @@ class OtoAnalizPro(ctk.CTk):
             with open(config_path, "r", encoding="utf-8") as f:
                 self.config = json.load(f)
         except:
-            self.config = {"settings": {"auto_save": False, "tr_format": True, "use_gpu": True}}
+            self.config = {"settings": {"auto_save": False, "tr_format": True, "use_gpu": True, "plaka_analiz_aktif": True}}
 
     def save_config(self):
         config_path = os.path.join(BASE_DIR, "Arayuz", "config.json")
@@ -285,7 +286,6 @@ class OtoAnalizPro(ctk.CTk):
             count = 0
             plate_list = []
 
-            # 1. Araç ve Plaka Tanımı
             if run_vehicle or run_plates:
                 nomeroff = module_manager.get_module("Nomeroff-Net v4")
                 if nomeroff:
@@ -296,9 +296,10 @@ class OtoAnalizPro(ctk.CTk):
                     text += f" | {result['text']}" if text else result['text']
                     count = result["count"]
                     plate_list = result["plates"]
+                    crops_list = result.get("crops", [])
 
             if ann_img is not None:
-                self.last_result = {"img": ann_img, "plates": plate_list, "count": count}
+                self.last_result = {"img": ann_img, "plates": plate_list, "count": count, "crops": crops_list}
                 img_rgb = cv2.cvtColor(ann_img, cv2.COLOR_BGR2RGB)
                 img_pil = Image.fromarray(img_rgb)
                 img_pil.thumbnail((800, 500))
@@ -322,7 +323,27 @@ class OtoAnalizPro(ctk.CTk):
             count = self.last_result.get('count', 0)
             self.lbl_count.configure(text=f"Araç Sayısı: {count}")
             plates = self.last_result.get('plates', [])
-            plate_text = "\n".join([f"• {p}" for p in plates]) if plates else "Bulunamadı"
+            crops = self.last_result.get('crops', [])
+            
+            plaka_analiz_aktif = self.config.get("settings", {}).get("plaka_analiz_aktif", True)
+            plate_text_lines = []
+            
+            if plates:
+                analizator = PlakaAnalizator()
+                analizator.durumu_ayarla(plaka_analiz_aktif)
+                for i, p in enumerate(plates):
+                    if plaka_analiz_aktif:
+                        crop = crops[i] if i < len(crops) else None
+                        arka_plan, yazi = analizator.renk_cikar(crop) if crop is not None else (None, None)
+                        sonuc = analizator.analiz_et(p, arka_plan, yazi)
+                        tur = sonuc.get("tur", "Bilinmeyen") if sonuc else "Bilinmeyen"
+                        plate_text_lines.append(f"• {p} [{tur}]")
+                    else:
+                        plate_text_lines.append(f"• {p}")
+                plate_text = "\n".join(plate_text_lines)
+            else:
+                plate_text = "Bulunamadı"
+                
             self.txt_plates.configure(state="normal")
             self.txt_plates.delete("1.0", "end")
             self.txt_plates.insert("1.0", plate_text)
@@ -362,10 +383,9 @@ class OtoAnalizPro(ctk.CTk):
         self.btn_save.pack_forget()
         self.btn_reset.pack_forget()
         self.btn_cancel.pack_forget()
-        self.btn_select.pack(side="left", padx=10)
         self.btn_select.configure(state="normal")
         self.btn_run.pack(side="left", padx=10)
-        self.img_lbl.configure(image=None, text="Görsel seçimi bekliyor...")
+        self.img_lbl.configure(image="", text="Görsel seçimi bekliyor...")
         if hasattr(self, 'lbl_count'):
             self.lbl_count.configure(text="Araç Sayısı: -")
             self.txt_plates.configure(state="normal")
@@ -464,6 +484,12 @@ class OtoAnalizPro(ctk.CTk):
                                      command=lambda: self.toggle_setting("auto_save", auto_save_sw))
         auto_save_sw.pack(pady=10)
         if self.config["settings"].get("auto_save"): auto_save_sw.select()
+
+        # Plaka Analiz Switch
+        plaka_analiz_sw = ctk.CTkSwitch(self.main_frame, text="Plaka Türü Analizi (Askeri, Sivil vs.)", 
+                                     command=lambda: self.toggle_setting("plaka_analiz_aktif", plaka_analiz_sw))
+        plaka_analiz_sw.pack(pady=10)
+        if self.config["settings"].get("plaka_analiz_aktif", True): plaka_analiz_sw.select()
 
         ctk.CTkButton(self.main_frame, text="Dashboard'a Dön", command=self.show_dashboard).pack(pady=40)
 

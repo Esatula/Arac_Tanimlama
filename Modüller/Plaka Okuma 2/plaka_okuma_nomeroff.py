@@ -114,6 +114,7 @@ def detect_and_read_nomeroff(image_path, run_plates=True):
         bboxs = images_bboxs[0]
         detected_texts = texts[0]
         final_texts = []
+        plate_crops = []
         
         for i, box in enumerate(bboxs):
             # Coordinates
@@ -123,6 +124,10 @@ def detect_and_read_nomeroff(image_path, run_plates=True):
             p_text = detected_texts[i] if i < len(detected_texts) else "???"
             final_texts.append(p_text)
             
+            # Crop image for color analysis
+            crop = img[max(0, ymin):ymax, max(0, xmin):xmax]
+            plate_crops.append(crop)
+            
             # Draw plate box in GREEN
             cv2.rectangle(annotated_img, (xmin, ymin), (xmax, ymax), (0, 255, 0), 3)
             cv2.putText(annotated_img, p_text, (xmin, max(30, ymin - 10)),
@@ -130,16 +135,16 @@ def detect_and_read_nomeroff(image_path, run_plates=True):
 
         full_text = " | ".join(final_texts) if final_texts else "Plaka tespit edilemedi."
         
-        return annotated_img, full_text, vehicle_count, final_texts
+        return annotated_img, full_text, vehicle_count, final_texts, plate_crops
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return None, f"Nomeroff-Net Hatası: {str(e)}", 0, []
+        return None, f"Nomeroff-Net Hatası: {str(e)}", 0, [], []
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         img_path = sys.argv[1]
-        ann, txt, count = detect_and_read_nomeroff(img_path)
+        ann, txt, count, texts, crops = detect_and_read_nomeroff(img_path)
         if ann is not None:
             print(f"Tespit Edilen: {txt}")
             cv2.imshow("Nomeroff-Net Sonuç", ann)

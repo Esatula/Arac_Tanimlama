@@ -39,12 +39,13 @@ class NomeroffPlateModule(BaseModule):
         run_plates = kwargs.get("run_plates", True)
         
         # Orijinal fonksiyonu çağır
-        ann_img, text, count, plate_list = detect_and_read_nomeroff(image_path, run_plates=run_plates)
+        ann_img, text, count, plate_list, crops = detect_and_read_nomeroff(image_path, run_plates=run_plates)
         
         return {
             "annotated_image": ann_img,
             "text": text,
             "count": count,
             "plates": plate_list,
+            "crops": crops,
             "status": "Success" if ann_img is not None else "Error"
         }
