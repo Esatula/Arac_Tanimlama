@@ -19,8 +19,9 @@
     ],
     "settings": {
         "theme": "dark",
-        "tr_format": true,
+        "tr_format": 0,
         "auto_save": false,
-        "use_gpu": true
+        "use_gpu": true,
+        "plaka_analiz_aktif": 1
     }
 }

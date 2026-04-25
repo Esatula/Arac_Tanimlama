@@ -376,6 +376,9 @@ class OtoAnalizPro(ctk.CTk):
                 analizator = PlakaAnalizator()
                 analizator.durumu_ayarla(plaka_analiz_aktif)
                 
+                tr_format_aktif = self.config.get("settings", {}).get("tr_format", True)
+                analizator.tr_format_ayarla(tr_format_aktif)
+                
                 grid_frame = ctk.CTkFrame(self.results_panel, fg_color="transparent")
                 grid_frame.pack(fill="x", padx=10)
                 
@@ -542,6 +545,12 @@ class OtoAnalizPro(ctk.CTk):
                                      command=lambda: self.toggle_setting("plaka_analiz_aktif", plaka_analiz_sw))
         plaka_analiz_sw.pack(pady=10)
         if self.config["settings"].get("plaka_analiz_aktif", True): plaka_analiz_sw.select()
+
+        # Türkçe Format Zorlama Switch
+        tr_format_sw = ctk.CTkSwitch(self.main_frame, text="Türkçe Plaka Formatına Zorla (Oto-Düzeltme)", 
+                                     command=lambda: self.toggle_setting("tr_format", tr_format_sw))
+        tr_format_sw.pack(pady=10)
+        if self.config["settings"].get("tr_format", True): tr_format_sw.select()
 
         ctk.CTkButton(self.main_frame, text="Dashboard'a Dön", command=self.show_dashboard).pack(pady=40)
 

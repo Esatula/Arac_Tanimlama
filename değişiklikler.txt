@@ -81,3 +81,10 @@ KAPSAM: GPU Uyumluluğu ve Plaka Renk (Tür) Analizi Algoritması
     3. TBMM Format Kuralı: Metin `TBM` ile başlıyorsa, algoritma ilk 4 haneyi zorla harfe (`TBMM`), kalan 3 haneyi zorla rakama (Örn: `TBMM0O1` -> `TBMM001`) çevirir.
     4. Sivil Plaka Bitiş Kuralı: Sivil plakaların sonu her zaman rakam bloğuyla biter. Algoritma sağdan sola doğru okuma yaparak harf görene kadar tüm karakterleri (Örn: `34 A 12B4` -> `34A1284`) zorla rakama çevirir.
   * Entegrasyon: Bu yapı `Core/plaka_analiz.py` dosyasına dahil edildi ve `analiz_et` metodunda Regex ve Renk analizinden hemen önce (Pre-processing adımı olarak) tetiklenecek şekilde ayarlandı. Böylece analiz motoruna her zaman pürüzsüz ve formatı doğrulanmış bir metin gönderilmesi sağlandı.
+
+[7-1] OCR Hata Düzeltici (Türkçe Plaka Zorlaması) Toggle Özelliği
+- ÖZET: Sistemin OCR hatalarını düzeltmek için plakayı Türkçe plaka sistemine (örn: 11AAA111) uydurmaya çalışması (Oto-Düzeltme) opsiyonel hale getirildi. 
+- DETAYLAR:
+  * Kullanıcıların, yabancı veya format dışı plakaları orjinal haliyle görmek istediklerinde sistemin bunu zorla değiştirmesini engellemek için arayüze "Türkçe Plaka Formatına Zorla (Oto-Düzeltme)" ayarı eklendi.
+  * `Core/plaka_analiz.py` içindeki `PlakaAnalizator` sınıfına `tr_format_aktif` bayrağı ve bu bayrağı kontrol eden `tr_format_ayarla` metodu eklendi.
+  * `OtoAnaliz_Pro.py` ayarlar (settings) menüsünden bu özellik istendiği an açılıp kapatılabilecek şekilde entegre edildi. Modül kapalıysa, NomeroffNet'in okuduğu ham plaka doğrudan analiz sistemine iletilir.

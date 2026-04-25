@@ -9,10 +9,15 @@ class PlakaAnalizator:
     def __init__(self):
         # Ayarlardan modülün aktif/pasif durumunu kontrol etmek için bir bayrak
         self.aktif = True
+        self.tr_format_aktif = True
 
     def durumu_ayarla(self, durum: bool):
         """Modülü açıp kapatmak için kullanılır."""
         self.aktif = durum
+
+    def tr_format_ayarla(self, durum: bool):
+        """Türkçe plaka zorlama (OCR Düzeltici) modülünü açıp kapatmak için kullanılır."""
+        self.tr_format_aktif = durum
 
     def analiz_et(self, plaka_metni, arka_plan_rengi=None, yazi_rengi=None):
         """
@@ -25,7 +30,10 @@ class PlakaAnalizator:
         temiz_plaka = re.sub(r"[^A-Z0-9]", "", str(plaka_metni).upper())
         
         # OCR (Yapay Zeka) Okuma Hatalarını Türkiye Sistemine Göre Düzelt (8O0001 -> 800001)
-        plaka = OcrDuzeltici.duzelt(temiz_plaka)
+        if self.tr_format_aktif:
+            plaka = OcrDuzeltici.duzelt(temiz_plaka)
+        else:
+            plaka = temiz_plaka
         
         # Renk bilgileri gelmemişse standart beyaz/siyah kabul et
         bg = arka_plan_rengi.lower() if arka_plan_rengi else "beyaz"
