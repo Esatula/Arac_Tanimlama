@@ -1,3 +1,4 @@
+Gulixar BölükBaşı
 # Araç Tanımlama ve Analiz Sistemi Gereksinimleri
 # Not: Bu sistem Gelişmiş Plaka Tanıma için Python 3.11 gerektirir.
 
